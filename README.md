@@ -113,7 +113,7 @@ The GraphQL API supports comprehensive filtering using django-filter integration
 
 ```graphql
 {
-  allProducts(priceGte: 50.0, priceLte: 200.0) {
+  allProducts(price_Gte: "50.0", price_Lte: "200.0") {
     edges {
       node {
         id

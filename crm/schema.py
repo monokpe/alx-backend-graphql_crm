@@ -1,11 +1,13 @@
 import graphene
-from graphene_django import DjangoObjectType, DjangoFilterConnectionField
+from graphene_django import DjangoObjectType, DjangoConnectionField
 from graphene import relay
 from .models import Customer, Product, Order
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from decimal import Decimal
+import django_filters
+from graphene_django.filter import DjangoFilterConnectionField
 
 
 # Type Definitions
@@ -197,15 +199,32 @@ class DeleteCustomer(graphene.Mutation):
 
 
 class Query(graphene.ObjectType):
-    # Filtered queries using DjangoFilterConnectionField
-    all_customers = DjangoFilterConnectionField(CustomerType)
-    all_products = DjangoFilterConnectionField(ProductType)
-    all_orders = DjangoFilterConnectionField(OrderType)
+    # Simple test query
+    hello = graphene.String(default_value="Hello, GraphQL CRM with Advanced Filtering!")
+    
+    # Filtered queries using DjangoFilterConnectionField with sorting
+    all_customers = DjangoFilterConnectionField(
+        CustomerType,
+        order_by=graphene.List(graphene.String)
+    )
+    all_products = DjangoFilterConnectionField(
+        ProductType,
+        order_by=graphene.List(graphene.String)
+    )
+    all_orders = DjangoFilterConnectionField(
+        OrderType,
+        order_by=graphene.List(graphene.String)
+    )
 
     # Individual item queries
     customer_by_id = graphene.Field(CustomerType, id=graphene.ID(required=True))
     product_by_id = graphene.Field(ProductType, id=graphene.ID(required=True))
     order_by_id = graphene.Field(OrderType, id=graphene.ID(required=True))
+    
+    # Additional utility queries
+    customers_count = graphene.Int()
+    products_count = graphene.Int()
+    orders_count = graphene.Int()
 
     def resolve_customer_by_id(root, info, id):
         try:
@@ -224,6 +243,15 @@ class Query(graphene.ObjectType):
             return Order.objects.get(pk=id)
         except Order.DoesNotExist:
             return None
+    
+    def resolve_customers_count(root, info):
+        return Customer.objects.count()
+    
+    def resolve_products_count(root, info):
+        return Product.objects.count()
+    
+    def resolve_orders_count(root, info):
+        return Order.objects.count()
 
 
 class Mutation(graphene.ObjectType):
